@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Diet Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #e0e7ff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .quiz-option:hover {
+            background: #c7d2fe;
+        }
+        .result {
+            text-align: center;
+            font-size: 1.5em;
+            margin-top: 20px;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f0f;
+            animation: confettiFall 5s linear forwards;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="auth-section" class="container">
+    <h1>Skill Diet</h1>
+    <div id="signup-form">
+        <h2>Create Account</h2>
+        <input type="text" id="signup-username" placeholder="Username" required>
+        <input type="password" id="signup-password" placeholder="Password" required>
+        <button id="signup-btn">Sign Up</button>
+        <p>Already have an account? <button id="show-login">Sign In</button></p>
+    </div>
+    <div id="login-form" class="hidden">
+        <h2>Welcome Back</h2>
+        <input type="text" id="login-username" placeholder="Username" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button id="login-btn">Sign In</button>
+        <p>Don't have an account? <button id="show-signup">Sign Up</button></p>
+    </div>
+</div>
+
+<div id="topics-section" class="container hidden">
+    <h2>Select a Topic</h2>
+    <button class="topic-btn" data-topic="web-services">Web Services</button>
+    <button class="topic-btn" data-topic="api-fundamentals">API Fundamentals</button>
+</div>
+
+<div id="quiz-section" class="container hidden">
+    <h2 id="quiz-title"></h2>
+    <div id="quiz-questions"></div>
+    <button id="submit-quiz" class="hidden">Submit Quiz</button>
+    <div id="result" class="hidden"></div>
+</div>
+
+<script>
+    const users = JSON.parse(localStorage.getItem('users')) || {};
+    const questions = {
+        "web-services": [
+            { question: "What does SOAP stand for?", options: ["Simple Object Access Protocol", "Simple Open Access Protocol", "Service Object Access Protocol", "None of the above"], answer: 0 },
+            { question: "Which protocol does SOAP typically use?", options: ["HTTP/HTTPS", "FTP", "SMTP", "POP3"], answer: 0 },
+            { question: "What is the main advantage of REST over SOAP?", options: ["Lightweight and faster", "More secure", "Supports binary data", "More reliable"], answer: 0 },
+            { question: "What format is commonly used for REST API responses?", options: ["JSON", "XML", "CSV", "SQL"], answer: 0 },
+            { question: "Which HTTP method is used to retrieve information in REST?", options: ["GET", "POST", "PUT", "DELETE"], answer: 0 },
+            { question: "What does WSDL stand for in web services?", options: ["Web Services Description Language", "Web Services Development Language", "Web Service Data Language", "Web Services Deployment Language"], answer: 0 },
+            { question: "Which of these is NOT a characteristic of REST?", options: ["Stateful", "Client-Server", "Uniform Interface", "Cacheable"], answer: 0 },
+            { question: "What is GraphQL primarily used for?", options: ["API query language", "Database management", "Authentication", "Load balancing"], answer: 0 },
+            { question: "Which HTTP status code indicates successful creation in REST?", options: ["201", "200", "204", "404"], answer: 0 },
+            { question: "What is a microservice?", options: ["Small, independent service that works together with others", "Large monolithic application", "Cloud storage service", "Database structure"], answer: 0 },
+            { question: "Which authentication method uses tokens in web services?", options: ["OAuth", "Basic Auth", "Digest Auth", "NTLM"], answer: 0 },
+            { question: "What is the purpose of an API gateway?", options: ["Request routing and composition", "Database optimization", "Load testing", "Code compilation"], answer: 0 },
+            { question: "Which is NOT a REST constraint?", options: ["Server push notifications", "Uniform interface", "Stateless", "Cacheable"], answer: 0 },
+            { question: "What does URI stand for in REST?", options: ["Uniform Resource Identifier", "Universal Resource Interface", "Unified Request Interface", "Unrestricted Resource Identifier"], answer: 0 },
+            { question: "What is the main purpose of SOAP faults?", options: ["Error handling", "Authentication", "Caching", "Logging"], answer: 0 },
+            { question: "Which tool is commonly used for testing APIs?", options: ["Postman", "Photoshop", "Visual Studio", "MySQL Workbench"], answer: 0 },
+            { question: "What does HATEOAS stand for?", options: ["Hypermedia as the Engine of Application State", "High Analytics for Transfer of Extended Application State", "HTTP Authentication for Transfer of Encrypted Application Services", "None of the above"], answer: 0 },
+            { question: "Which protocol does GraphQL use?", options: ["HTTP", "FTP", "SMTP", "GraphQL is protocol independent"], answer: 3 },
+            { question: "What is the purpose of Swagger in web services?", options: ["API documentation", "Load balancing", "Database migration", "Error reporting"], answer: 0 },
+            { question: "Which HTTP method is NOT idempotent?", options: ["POST", "GET", "PUT", "DELETE"], answer: 0 }
+        ],
+        "api-fundamentals": [
+            { question: "What does REST stand for?", options: ["Representational State Transfer", "Representational Service Transfer", "Resource State Transfer", "None of the above"], answer: 0 },
+            { question: "What HTTP status code indicates 'Not Found'?", options: ["404", "400", "500", "401"], answer: 0 },
+            { question: "Which HTTP method is used to update a resource?", options: ["PUT", "GET", "POST", "DELETE"], answer: 0 },
+            { question: "What is the purpose of API versioning?", options: ["To manage breaking changes", "To improve security", "To reduce latency", "To increase storage"], answer: 0 },
+            { question: "Which authentication method uses API keys?", options: ["API Key Authentication", "OAuth", "JWT", "Basic Auth"], answer: 0 },
+            { question: "What is a query parameter in APIs?", options: ["Optional parameters passed in URL", "Required headers", "Encrypted body data", "Server configuration"], answer: 0 },
+            { question: "What does JWT stand for?", options: ["JSON Web Token", "JavaScript Web Token", "Java Web Transfer", "JSON Web Transfer"], answer: 0 },
+            { question: "What is the purpose of CORS?", options: ["Cross-origin resource sharing", "Content organization", "Cache optimization", "Security hardening"], answer: 0 },
+            { question: "Which is NOT an API architectural style?", options: ["SMS", "REST", "GraphQL", "SOAP"], answer: 0 },
+            { question: "What does rate limiting prevent?", options: ["API abuse/overuse", "Data corruption", "Authentication failures", "None of the above"], answer: 0 },
+            { question: "What is OpenAPI specification used for?", options: ["Describing REST APIs", "Database design", "Testing framework", "Logging format"], answer: 0 },
+            { question: "Which is NOT an API gateway feature?", options: ["Code compilation", "Rate limiting", "Authentication", "Request routing"], answer: 0 },
+            { question: "What is the most common format for API responses?", options: ["JSON", "XML", "HTML", "Binary"], answer: 0 },
+            { question: "What HTTP status code indicates successful deletion?", options: ["204", "200", "201", "404"], answer: 0 },
+            { question: "Which tool can generate API documentation?", options: ["Swagger", "Git", "NPM", "Webpack"], answer: 0 },
+            { question: "What does BFF stand for in API design?", options: ["Backend For Frontend", "Best Fit Framework", "Binary File Format", "Basic Function Flow"], answer: 0 },
+            { question: "Which HTTP header is used for content negotiation?", options: ["Accept", "Authorization", "Content-Type", "Cache-Control"], answer: 0 },
+            { question: "What does CRUD stand for?", options: ["Create, Read, Update, Delete", "Compile, Run, Update, Debug", "Cache, Retrieve, Update, Destroy", "None of the above"], answer: 0 },
+            { question: "What is the purpose of API mocking?", options: ["Testing without real backend", "Performance optimization", "Security hardening", "Version control"], answer: 0 },
+            { question: "Which HTTP method should be idempotent?", options: ["PUT", "POST", "PATCH", "All of them"], answer: 0 }
+        ]
+    };
+
+    document.getElementById('signup-btn').addEventListener('click', () => {
+        const username = document.getElementById('signup-username').value;
+        const password = document.getElementById('signup-password').value;
+        if (username && password) {
+            users[username] = password;
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('Account created successfully!');
+            toggleAuthForms();
+        }
+    });
+
+    document.getElementById('login-btn').addEventListener('click', () => {
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+        if (users[username] === password) {
+            alert('Login successful!');
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('topics-section').classList.remove('hidden');
+        } else {
+            alert('Invalid username or password');
+        }
+    });
+
+    document.getElementById('show-login').addEventListener('click', toggleAuthForms);
+    document.getElementById('show-signup').addEventListener('click', toggleAuthForms);
+
+    document.querySelectorAll('.topic-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const topic = e.target.dataset.topic;
+            startQuiz(topic);
+        });
+    });
+
+    document.getElementById('submit-quiz').addEventListener('click', displayResult);
+
+    function toggleAuthForms() {
+        document.getElementById('signup-form').classList.toggle('hidden');
+        document.getElementById('login-form').classList.toggle('hidden');
+    }
+
+    function startQuiz(topic) {
+        document.getElementById('topics-section').classList.add('hidden');
+        document.getElementById('quiz-section').classList.remove('hidden');
+        document.getElementById('quiz-title').innerText = topic.replace('-', ' ').toUpperCase();
+        const quizQuestions = questions[topic];
+        const quizContainer = document.getElementById('quiz-questions');
+        quizContainer.innerHTML = '';
+        quizQuestions.forEach((q, index) => {
+            const questionElement = document.createElement('div');
+            questionElement.innerHTML = <p>${index + 1}. ${q.question}</p>;
+            q.options.forEach((option, i) => {
+                questionElement.innerHTML += <label class="quiz-option"><input type="radio" name="q${index}" value="${i}"> ${option}</label>;
+            });
+            quizContainer.appendChild(questionElement);
+        });
+        document.getElementById('submit-quiz').classList.remove('hidden');
+    }
+
+    function displayResult() {
+        const quizQuestions = questions[document.getElementById('quiz-title').innerText.toLowerCase().replace(' ', '-')];
+        let score = 0;
+        quizQuestions.forEach((q, index) => {
+            const selected = document.querySelector(input[name="q${index}"]:checked);
+            if (selected && parseInt(selected.value) === q.answer) {
+                score++;
+            }
+        });
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = <p>Your score: ${score}/${quizQuestions.length}</p><p>Thank you for participating!</p>;
+        resultDiv.classList.remove('hidden');
+        animateResult();
+    }
+
+    function animateResult() {
+        const resultDiv = document.getElementById('result');
+        for (let i = 0; i < 30; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            document.body.appendChild(confetti);
+        }
+        setTimeout(() => {
+            document.getElementById('quiz-section').classList.add('hidden');
+            document.getElementById('topics-section').classList.remove('hidden');
+        }, 10000);
+    }
+</script>
+
+</body>
+</html>
